@@ -232,7 +232,7 @@ namespace SimplexSolver.Pages
                 var tableCopy = (double[][])simplexTable.Clone();
                 var observatii = new List<string>();
                 observatii.Add($" C↓B : {(SelectedMode == "max" ? "Max" : "Min")} Δj = Δ{pivotElementColumn + 1} = {DoubleToFractionString(deltaj[pivotElementColumn])}");
-                var minimulString = baza[pivotElementRow] < variabile ? $"X{baza[pivotElementRow] + 1}" : $"S{baza[pivotElementRow] - variabile + 1}";
+                var minimulString = baza[pivotElementRow] < variabile ? $"X{baza[pivotElementRow] + 1}" : $"Y{baza[pivotElementRow] - variabile + 1}";
                 observatii.Add($" C↑B : Min Xb/X=ak = {DoubleToFractionString(xb[pivotElementColumn]/simplexTable[pivotElementRow][pivotElementColumn])} care corespunde lui {minimulString}");
                 observatii.Add($" Pivot: {DoubleToFractionString(tableCopy[pivotElementRow][pivotElementColumn])}");
                 var zk = CalculateZk(coefBazei, xb);
@@ -407,7 +407,7 @@ namespace SimplexSolver.Pages
             }
             for (int i = 0; i < restrictii; i++)
             {
-                headers.Add($"S{i + 1}");
+                headers.Add($"Y{i + 1}");
             }
 
             return headers.ToArray();
@@ -420,7 +420,7 @@ namespace SimplexSolver.Pages
             for (int i = 0; i < table.Length; i++)
             {
                 var row = new List<string>();
-                row.Add(Baza[i] < variabile ? $"X{Baza[i] + 1}" : $"S{i + 1}");
+                row.Add(Baza[i] < variabile ? $"X{Baza[i] + 1}" : $"Y{i + 1}");
                 row.Add(CB[i].ToString());
                 row.Add(DoubleToFractionString(XB[i]));
                 for (int j = 0; j < table[i].Length; j++)
