@@ -74,6 +74,7 @@ namespace SimplexSolver.Pages
             matrix[2][0] = 1;
             matrix[2][1] = 3;
             matrix[2][2] = 2;
+            SelectedMode = "max";
             OnCheckButtonClicked();
             StateHasChanged();
         }
@@ -124,7 +125,7 @@ namespace SimplexSolver.Pages
             if (tabelVisible) genereazaTabel();
         }
 
-        private void CustomFunction(ChangeEventArgs e, int i, int j)
+        private void HandleInputMatrix(ChangeEventArgs e, int i, int j)
         {
             int value;
             if (int.TryParse(e.Value.ToString(), out value))
@@ -134,7 +135,7 @@ namespace SimplexSolver.Pages
 
         }
 
-        private void CustomFunction2(ChangeEventArgs e, int row, double value)
+        private void HandleInputFunctionValues(ChangeEventArgs e, int row, double value)
         {
             if (double.TryParse(e.Value.ToString(), out double newValue))
             {
@@ -144,7 +145,7 @@ namespace SimplexSolver.Pages
             functionValues[row] = value; // Update the array with the modified value
         }
 
-        private void CustomFunction3(ChangeEventArgs e, int i)
+        private void HandleInputRestriction(ChangeEventArgs e, int i)
         {
             int value;
             if (int.TryParse(e.Value.ToString(), out value))
@@ -155,43 +156,41 @@ namespace SimplexSolver.Pages
 
         private List<SimplexStep> PerformSimplexAlgorithm()
         {
-            Console.WriteLine("start");
             var steps = new List<SimplexStep>();
 
-            // Validate sizes of arrays
+            // Valideaza datele de intrare
             if (matrix.Length != restrictii || functionValues.Length != variabile || restrictionValues.Length != restrictii)
             {
-                return steps; // Return empty steps list if sizes are inconsistent
+                return steps; // returneaza o lista goala daca datele de intrare nu sunt valide
             }
 
-            // Step 0: Initial table setup
-            var table = new double[restrictii][];
+            // Step 0: Initializare 
+            var simplexTable = new double[restrictii][];
             var indexOfOne = variabile;
             for (int i = 0; i < restrictii; i++)
             {
-                table[i] = new double[variabile + restrictii];
+                simplexTable[i] = new double[variabile + restrictii];
                 for (int j = 0; j < variabile + restrictii; j++)
                 {
                     if (j < variabile)
                     {
-                        table[i][j] = matrix[i][j];
+                        simplexTable[i][j] = matrix[i][j];
                     }
                     else
                     {
                         if (j == indexOfOne)
                         {
-                            table[i][j] = 1;
+                            simplexTable[i][j] = 1;
                         }
                         else
                         {
-                            table[i][j] = 0;
+                            simplexTable[i][j] = 0;
                         }
 
                     }
                 }
                 indexOfOne++;
             } //this is correct
-
 
             var xb = (double[])restrictionValues.Clone();
 
@@ -203,7 +202,6 @@ namespace SimplexSolver.Pages
                 baza[i] = primaBaza;
                 primaBaza++;
             }
-            Console.WriteLine($"baza: {JsonSerializer.Serialize(baza)}");
             double[] coefBazeiInit = new double[restrictii + variabile];
             for (int i = 0; i < restrictii + variabile; i++)
             {
@@ -216,37 +214,29 @@ namespace SimplexSolver.Pages
                     coefBazeiInit[i] = 0;
                 }
             }
-            Console.WriteLine($"Coef bazei init: {JsonSerializer.Serialize(coefBazeiInit)}");
+           
             double[] coefBazei = baza.Select(i => coefBazeiInit[(int)i]).ToArray();
-            Console.WriteLine($"Coef bazei calculat : {JsonSerializer.Serialize(coefBazei)}");
-            var zj = CalculateZj(table, coefBazei);
-            Console.WriteLine($"ZJ CALCULAT: {JsonSerializer.Serialize(zj)}");
+            var zj = CalculateZj(simplexTable, coefBazei);
             var deltaj = CalculateDeltaJ(coefBazeiInit, zj);
-            Console.WriteLine($"dj CALCULAT: {JsonSerializer.Serialize(CalculateDeltaJ(coefBazeiInit, zj))}");
+            
             //check if the problem is optimal
 
             int iterations = 0;
             while (true)
             {
-                Console.WriteLine($"optim:{IsOptimal(deltaj)}");
+                
                 if (IsOptimal(deltaj) || iterations > 100) break;
-                Console.WriteLine($"iteratia {iterations}");
                 var pivotElementColumn = FindEnteringColumn(deltaj);
-                Console.WriteLine(JsonSerializer.Serialize(table));
-                var pivotElementRow = FindExitingColumn(xb, table, pivotElementColumn);
-                Console.WriteLine(JsonSerializer.Serialize(table));
-                var pivotElement = table[pivotElementRow][pivotElementColumn];
-                Console.WriteLine($"pivot: {pivotElement}");
-                Console.WriteLine(JsonSerializer.Serialize(table));
-                Console.WriteLine($"xb inainte de hau hau:{JsonSerializer.Serialize(xb)}");
-                var tableCopy = (double[][])table.Clone();
+                var pivotElementRow = FindExitingColumn(xb, simplexTable, pivotElementColumn);
+
+                var tableCopy = (double[][])simplexTable.Clone();
                 var observatii = new List<string>();
                 observatii.Add($" C↓B : {(SelectedMode == "max" ? "Max" : "Min")} Δj = Δ{pivotElementColumn + 1} = {DoubleToFractionString(deltaj[pivotElementColumn])}");
                 var minimulString = baza[pivotElementRow] < variabile ? $"X{baza[pivotElementRow] + 1}" : $"S{baza[pivotElementRow] - variabile + 1}";
-                observatii.Add($" C↑B : Min Xb/X=ak = {DoubleToFractionString(xb[pivotElementColumn]/table[pivotElementRow][pivotElementColumn])} care corespunde lui {minimulString}");
+                observatii.Add($" C↑B : Min Xb/X=ak = {DoubleToFractionString(xb[pivotElementColumn]/simplexTable[pivotElementRow][pivotElementColumn])} care corespunde lui {minimulString}");
                 observatii.Add($" Pivot: {DoubleToFractionString(tableCopy[pivotElementRow][pivotElementColumn])}");
                 var zk = CalculateZk(coefBazei, xb);
-                Console.WriteLine(JsonSerializer.Serialize(observatii));
+              
                 steps.Add(new SimplexStep
                 {
                     StepNumber = iterations,
@@ -264,17 +254,12 @@ namespace SimplexSolver.Pages
                     PivotRow = pivotElementRow
 
                 });
-                PerformTableTransformation(table, pivotElementColumn, pivotElementRow, xb);
+                PerformTableTransformation(simplexTable, pivotElementColumn, pivotElementRow, xb);
                 // calculam baza si coef bazei
-                Console.WriteLine($"xb dupa de hau hau:{JsonSerializer.Serialize(xb)}");
                 baza[pivotElementRow] = pivotElementColumn;
-                Console.WriteLine($"baza: {JsonSerializer.Serialize(baza)}");
                 coefBazei = baza.Select(i => coefBazeiInit[(int)i]).ToArray();
-                Console.WriteLine($"Coef bazei calculat : {JsonSerializer.Serialize(coefBazei)}");
-                zj = CalculateZj(table, coefBazei);
-                Console.WriteLine($"ZJ CALCULAT: {JsonSerializer.Serialize(zj)}");
+                zj = CalculateZj(simplexTable, coefBazei);
                 deltaj = CalculateDeltaJ(coefBazeiInit, zj);
-                Console.WriteLine($"dj CALCULAT: {JsonSerializer.Serialize(CalculateDeltaJ(coefBazeiInit, zj))}");
                 iterations++;
             }
             var observatiiFinale = new List<string>();
@@ -296,7 +281,7 @@ namespace SimplexSolver.Pages
             {
                 StepNumber = iterations,
                 TableHeaders = GenerateTableHeaders(),
-                TableRows = GenerateTableRows(table, baza, coefBazei, xb),
+                TableRows = GenerateTableRows(simplexTable, baza, coefBazei, xb),
                 DeltaJ = DoubleToFractionString(deltaj),
                 PivotElement = "Optimal",
                 Observatii = observatiiFinale,
@@ -345,7 +330,7 @@ namespace SimplexSolver.Pages
 
         private int FindExitingColumn(double[] xb, double[][] table, int enteringColumn)
         {
-            // we create a copy of the table array
+            // creem o copie a tabelei
             var tableCopy = new double[table.Length][];
             for (int i = 0; i < table.Length; i++)
             {
@@ -355,8 +340,7 @@ namespace SimplexSolver.Pages
                     tableCopy[i][j] = table[i][j];
                 }
             }
-            Console.WriteLine($"copy:{JsonSerializer.Serialize(tableCopy)}");
-            // we calculate the ratios
+            // calculam ratia
             var ratios = new double[tableCopy.Length];
             for (int i = 0; i < xb.Length; i++)
             {
@@ -366,12 +350,7 @@ namespace SimplexSolver.Pages
                     ratios[i] = double.MaxValue;
                 }
             }
-            Console.WriteLine($"ratios:{JsonSerializer.Serialize(ratios)}");
-
             var indexOfMinRatio = Array.IndexOf(ratios, ratios.Min());
-
-            Console.WriteLine($"minRatio:{ratios[indexOfMinRatio]}");
-            Console.WriteLine($"minRatioIndex:{indexOfMinRatio}");
             return indexOfMinRatio;
         }
 
@@ -400,8 +379,6 @@ namespace SimplexSolver.Pages
             {
                 deltaJ[j] = cbInit[j] - zj[j];
             }
-            Console.WriteLine("dj");
-            Console.WriteLine(JsonSerializer.Serialize(deltaJ));
             return deltaJ;
         }
 
@@ -450,8 +427,6 @@ namespace SimplexSolver.Pages
                 {
                     row.Add(DoubleToFractionString(table[i][j]));
                 }
-                // row.Add(Baza[i].ToString());
-
                 rows.Add(row.ToArray());
             }
             return rows.ToArray();

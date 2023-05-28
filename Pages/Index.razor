@@ -88,7 +88,7 @@
             {
                 double row = i;
                 double value = functionValues[i]; // Temporary variable
-                <input type="number" @bind="value" @oninput="(e) => CustomFunction2(e, (int)row, value)" />
+                <input type="number" @bind="value" @oninput="(e) => HandleInputFunctionValues(e, (int)row, value)" />
                 <p>x @i</p>
                 @if (i != functionValues?.Length - 1)
                 {
@@ -108,7 +108,7 @@
                                 double row = i; // Create a local copy of i
                                 double column = j; // Create a local copy of j
                                 <td>
-                                    <input type="number" value="@matrix[(int)row][(int)column]" @oninput="(e) => CustomFunction(e, (int)row, (int)column)" />
+                                    <input type="number" value="@matrix[(int)row][(int)column]" @oninput="(e) => HandleInputMatrix(e, (int)row, (int)column)" />
                                 </td>
                                 <td><p>x @j</p></td>
                                 @if (j != variabile - 1)
@@ -118,12 +118,11 @@
                                     </td>
                                 }
                             }
-
                             @if (i < restrictionValues?.Length)
                             {
                                 int row = i; // Create a local copy of i
                                 <td><p>≤</p></td>
-                                <td><input type="number" value="@restrictionValues[i]" @oninput="(e) => CustomFunction3(e, row)" /></td>
+                                <td><input type="number" value="@restrictionValues[i]" @oninput="(e) => HandleInputRestriction(e, row)" /></td>
                             }
                         </tr>
                     }
@@ -155,15 +154,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @* @foreach (var row in step.TableRows) *@
-                                @* { *@
-                                @*     <tr> *@
-                                @*         @foreach (var element in row) *@
-                                @*         { *@
-                                @*             <td>@element</td> *@
-                                @*         } *@
-                                @*     </tr> *@
-                                @* } *@
+
                                 @for (var i = 0; i < step.TableRows.Length; i++)
                                 {
                                     <tr>
