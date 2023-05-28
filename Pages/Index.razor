@@ -89,7 +89,7 @@
                 double row = i;
                 double value = functionValues[i]; // Temporary variable
                 <input type="number" @bind="value" @oninput="(e) => HandleInputFunctionValues(e, (int)row, value)" />
-                <p>x @i</p>
+                <p>x @(i+1)</p>
                 @if (i != functionValues?.Length - 1)
                 {
                     <p>+</p>
@@ -110,7 +110,7 @@
                                 <td>
                                     <input type="number" value="@matrix[(int)row][(int)column]" @oninput="(e) => HandleInputMatrix(e, (int)row, (int)column)" />
                                 </td>
-                                <td><p>x @j</p></td>
+                                <td><p>x @(j+1)</p></td>
                                 @if (j != variabile - 1)
                                 {
                                     <td>
